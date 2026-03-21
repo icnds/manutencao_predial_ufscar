@@ -2,7 +2,9 @@ import glob
 import re
 import pandas as pd
 
-anos = (2023, 2024, 2025)
+# Uma pasta para cada ano
+pastas_anos = glob.glob('*\\*')
+anos = [i.split('\\')[1] for i in pastas_anos]
 for ano in anos:
 
     excel_files = glob.glob(f'dados\\{ano}\\*.xlsx')
