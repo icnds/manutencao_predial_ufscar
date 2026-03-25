@@ -1,6 +1,5 @@
 import glob
 import re
-# import numpy as np
 import pandas as pd
 
 # ------------------- #
@@ -142,3 +141,4 @@ print(result.info())
 # - index=False → evita salvar o índice (0,1,2) como coluna extra
 # - encoding='utf-8' → para que caracteres especiais fiquem corretos
 result.to_csv('result.csv', index=False, encoding='utf-8')
+
