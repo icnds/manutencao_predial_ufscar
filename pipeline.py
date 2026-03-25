@@ -114,31 +114,99 @@ for dados in dados_brutos:
     df['TOTAL DA ETAPA'] = round(df['QUANT.'] * df['UNITÁRIO C/ BDI e DESCONTO'],2)
 
     # Preenche células vazias
-    df = df.fillna('-1')
+    df = df.fillna('NÃO PREENCHIDA')
 
     # Remove células com -1 nas colunas QUANT. e 'UNITÁRIO C/ BDI e DESCONTO' 
     # (despesas não comprovadas pela empresa contratata)
-    df = df[df['QUANT.'] != '-1']
-    df = df[df['UNITÁRIO C/ BDI e DESCONTO'] != '-1']
+    df = df[df['QUANT.'] != 'NÃO PREENCHIDA']
+    df = df[df['UNITÁRIO C/ BDI e DESCONTO'] != 'NÃO PREENCHIDA']
 
     # Exibe DataFrames
     print(f'\nNúmero de linhas: {df.shape[0]} | Número de colunas: {df.shape[1]}\n')
     print(df.head(3))
     dfs.append(df)
 
+# União dos DataFrames
+df_tratado = pd.concat(dfs, axis=0, ignore_index=True)
+
+# Remoção dos espaços adicionais
+df_tratado['DESCRIÇÃO DAS ETAPAS'] = df_tratado['DESCRIÇÃO DAS ETAPAS'].apply(lambda x: x.strip())
+
+# Coluna booleana para correções
+df_tratado['CORREÇÃO'] = 'NÃO'
+
+# Tratamento da exceção (primeira correção, despadronizada)
+desconto_linha = df_tratado[df_tratado['TIPO'] == 'Desconto Item 3.11 pago na medição 25']
+desconto_data_atual = desconto_linha['DATA'].values[0]
+desconto_mes_anterior = desconto_data_atual.month - 1 if desconto_data_atual.month > 1 else 12
+desconto_ano_anterior = desconto_data_atual.year if desconto_mes_anterior != 12 else desconto_data_atual.year - 1
+linha_descontada = df_tratado[(df_tratado['ITEM'] == '3.11') & 
+                              (df_tratado['DATA'].dt.month == desconto_mes_anterior) & 
+                              (df_tratado['DATA'].dt.year == desconto_ano_anterior)]
+linha_descontada_idx = linha_descontada.index.tolist()[0]
+
+print(f'\nLinha do primeiro desconto aplicado (JUL-24):\n\n {linha_descontada}')
+
+# Cria cópia da linha do desconto
+linha_a_ser_duplicada = df_tratado.loc[[linha_descontada_idx]].copy()
+
+# Altera valores da cópia da linha do desconto
+linha_a_ser_duplicada['CORREÇÃO'] = 'SIM'
+linha_a_ser_duplicada['UNITÁRIO C/ BDI e DESCONTO'] = desconto_linha['UNITÁRIO C/ BDI e DESCONTO'].values[0]
+linha_a_ser_duplicada['TOTAL DA ETAPA'] = desconto_linha['TOTAL DA ETAPA'].values[0]
+
+# Adiciona a linha alterada ao DataFrame original
+df_tratado = pd.concat([
+    df_tratado.iloc[:linha_descontada_idx + 1],  # Todas as linhas antes da que foi duplicada
+    linha_a_ser_duplicada,                       # A linha duplicada e modificada
+    df_tratado.iloc[linha_descontada_idx + 1:]   # Todas as linhas depois da que foi duplicada
+], ignore_index=True)
+
+# Demais correções
+correcoes_linhas = df_tratado[(df_tratado['TIPO'] == 'NÃO PREENCHIDA') & 
+                              (df_tratado['CÓDIGO'] == 'NÃO PREENCHIDA') & 
+                              (df_tratado['BANCO'] == 'NÃO PREENCHIDA')]
+                              
+print(f'\nLinhas de correções (2025):\n\n {correcoes_linhas}')
+
+idx_linhas_anteriores = [(idx-1) for idx in correcoes_linhas.index.tolist()]
+
+# Cria lista de DataFrames das linhas anteriores, com base nos índices
+linhas_anteriores = [df_tratado.loc[[idx]].copy() for idx in idx_linhas_anteriores]
+
+# Dicionário para armazenar valores das colunas
+colunas = {}
+
+def extrair_valores_linhas_anteriores(coluna, df, lista_indices):
+    # Extrai valores para a coluna específica no índice indicado
+    valores = df.loc[lista_indices, coluna].values
+    # Substitui 'NÃO PREENCHIDA' como valor anterior, caso aplicável
+    valores_substituicoes = [
+        valores[i - 1] if valor == 'NÃO PREENCHIDA' and i > 0 else valor
+        for i, valor in enumerate(valores)
+    ]
+    return valores_substituicoes
+
+# Percorre cada coluna preenchendo o dicionário
+for col in df_tratado.columns:
+    colunas[col] = extrair_valores_linhas_anteriores(coluna=col, df=df_tratado, lista_indices=idx_linhas_anteriores)
+
+linhas_anteriores_df = pd.DataFrame(colunas)
+print(linhas_anteriores_df)
+
+### TO DO: Substituir valores de UNID. em diante pelo mês anterior (assim como a data), exceto 
+### nos casos de valores antes das substituições (em que a data é de 2 meses anteriores)
+meses_anteriores = [i.month - 1 if i.month > 1 else 12 for i in correcoes_linhas['DATA']]
+anos_anteriores = [j.year if j.month != 12 else j.year - 1 for j in correcoes_linhas['DATA']]
+
+# print()
+# print(df_tratado.info())
+
 # ------------------- #
 # CARREGAMENTO (LOAD)
 # ------------------- #
 
-# União dos DataFrames
-result = pd.concat(dfs, axis=0, ignore_index=True)
-
-# Coluna booleana para correções
-result['CORREÇÃO'] = 'NÃO'
-print(result.info())
-
 # Exporta DataFrame para arquivo CSV
 # - index=False → evita salvar o índice (0,1,2) como coluna extra
 # - encoding='utf-8' → para que caracteres especiais fiquem corretos
-result.to_csv('result.csv', index=False, encoding='utf-8')
-
+df_tratado.to_csv('df_tratado.csv', index=False, encoding='utf-8')
