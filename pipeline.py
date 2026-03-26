@@ -212,30 +212,37 @@ linhas_anteriores_df['UNITÁRIO C/ BDI e DESCONTO'] = correcoes_linhas['UNITÁRI
 linhas_anteriores_df['TOTAL DA ETAPA'] = correcoes_linhas['TOTAL DA ETAPA'].values
 print(linhas_anteriores_df)
 
-# Ajuste das datas (correções são aplicadas aos meses anteriores)
+# Ajuste das datas (as correções são aplicadas aos meses anteriores)
 def ajustar_data(row):
     ano, mes = map(int, str(row['DATA']).split('-'))
-    
-    try:
-        # Tenta converter o valor da coluna 'ITEM' para float
-        float(row['ITEM'])
-        # Se for possível, subtrai um mês
-        mes -= 1
         
-    except ValueError:
-        # Se não for possível, subtrai dois meses
-        mes -= 2
-    
     # Ajuste se o mês for menor que 1
     if mes < 1:
         mes += 12
         ano -= 1
+    else:
+        mes -= 1
 
     return f'{ano:04d}-{mes:02d}'
 
 # Aplica a função ao DataFrame
 linhas_anteriores_df['DATA'] = linhas_anteriores_df.apply(ajustar_data, axis=1)
 print()
+print(linhas_anteriores_df)
+
+# Converte a coluna 'DATA' para o tipo datetime
+linhas_anteriores_df['DATA'] = pd.to_datetime(linhas_anteriores_df['DATA'], errors='coerce')
+
+# Encontra índices das linhas onde 'ITEM' começa com 'CORREÇÃO'
+indices_correcoes = linhas_anteriores_df[linhas_anteriores_df['ITEM'].str.startswith('CORREÇÃO')].index
+
+# Altera o valor da data da linha anterior (na planilha de JUL-25 
+# tem 2 casos de correções referentes à MAI-25)
+for i in indices_correcoes:
+    if i > 0:  # Verifica se não é a primeira linha
+        linhas_anteriores_df.at[i - 1, 'DATA'] = linhas_anteriores_df.at[i - 1, 'DATA'] - pd.DateOffset(months=1)
+
+# Exibe o DataFrame resultante
 print(linhas_anteriores_df)
 
 # Une os DataFrames
@@ -284,7 +291,6 @@ manutencao_predial_ufscar['DATA'] = pd.to_datetime(manutencao_predial_ufscar['DA
 
 print(manutencao_predial_ufscar.head())
 print()
-
 print(df_tratado.info())
 print()
 print(manutencao_predial_ufscar.info())
