@@ -99,11 +99,13 @@ for dados in dados_brutos:
     # Remove as colunas MÊS e ANO
     df = df.drop(columns=['MÊS','ANO']).reset_index(drop=True)
 
-    # Cria coluna CATEGORIA
-    df['CATEGORIA'] = None
+    # Cria coluna CATEGORIA com valor padrão
+    df['CATEGORIA'] = ''
+    # Define os limites das categorias
     equipe = int(df[df['DESCRIÇÃO DAS ETAPAS'] == 'EQUIPE DE PRESTAÇÃO DE SERVIÇOS ROTINEIROS DE MANUTENÇÃO PREDIAL'].index[0])
     materiais = int(df[df['TIPO'] == 'MATERIAIS NECESSÁRIOS PARA O DESEMPENHO DAS ROTINAS'].index[0])
     servicos = int(df[df['TIPO'] == 'SERVIÇOS / EQUIPAMENTOS ADICIONAIS NECESSÁRIOS DURANTE AS ROTINAS'].index[0])
+    # Atribui categorias
     df.loc[equipe:materiais, 'CATEGORIA'] = 'EQUIPE'
     df.loc[materiais:servicos, 'CATEGORIA'] = 'MATERIAIS'
     df.loc[servicos:, 'CATEGORIA'] = 'SERVIÇOS / EQUIPAMENTOS'
@@ -129,7 +131,7 @@ for dados in dados_brutos:
 # Une os DataFrames
 df_tratado = pd.concat(dfs, axis=0, ignore_index=True)
 
-# Remove os espaços adicionais
+# Remove espaços adicionais
 df_tratado['DESCRIÇÃO DAS ETAPAS'] = df_tratado['DESCRIÇÃO DAS ETAPAS'].apply(lambda x: x.strip())
 
 # Cria coluna booleana para correções
@@ -162,7 +164,7 @@ df_tratado = pd.concat([
     df_tratado.iloc[linha_descontada_idx + 1:]   # Todas as linhas depois da que foi duplicada
 ], ignore_index=True)
 
-# Tratamento de exceções das Demais correções
+# Tratamento de exceções das demais correções
 correcoes_linhas = df_tratado[(df_tratado['TIPO'] == 'NÃO PREENCHIDA') & 
                               (df_tratado['CÓDIGO'] == 'NÃO PREENCHIDA') & 
                               (df_tratado['BANCO'] == 'NÃO PREENCHIDA')]
@@ -274,7 +276,6 @@ manutencao_predial_ufscar[['QUANT.',
                            'TOTAL DA ETAPA']] = manutencao_predial_ufscar[['QUANT.', 
                                                                            'UNITÁRIO C/ BDI e DESCONTO', 
                                                                            'TOTAL DA ETAPA']].astype('float64')
-
 manutencao_predial_ufscar[['CÓDIGO', 
                            'BANCO', 
                            'DESCRIÇÃO DAS ETAPAS',
