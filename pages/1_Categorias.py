@@ -99,23 +99,51 @@ st.pyplot(plt)
 # --- #
 # Categorias temporal
 # --- #
-categorias_temporal = get_data(query="""
-                               SELECT strftime('%Y-%m', DATA) AS MÊS, CATEGORIA, COUNT(*) as QUANTIDADE 
-                               FROM sao_carlos 
-                               GROUP BY MÊS, CATEGORIA
-                               ORDER BY MÊS, QUANTIDADE DESC;
-                               """, conn=CONN)
-
-# Pivotando o DataFrame para que cada categoria seja uma coluna
-categorias_temporal_pivot = categorias_temporal.pivot(index='MÊS', columns='CATEGORIA', values='QUANTIDADE').fillna(0)
 st.markdown('## Categorias de manutenção predial ao longo do tempo')
-# Texto interpretativo em fonte pequena
-st.caption('''
-           A categoria Equipe tem dois picos mais acentuados em junho de 2024 e de 2025.
-           ''', text_alignment='left')
-st.divider()
 
-st.line_chart(data=categorias_temporal_pivot, height ='stretch', width='content')
+# Seletor
+option = st.selectbox(
+    'Período:',
+    ('2023', '2024', '2025', 'Todos'),
+    index=None,
+    placeholder='Selecione o período...',
+)
+
+option_safe = str(option).replace("'", "''")
+
+if option == 'Todos':
+    categorias_temporal = get_data(query="""
+                                   SELECT strftime('%Y-%m', DATA) AS MÊS, CATEGORIA, COUNT(*) as QUANTIDADE 
+                                   FROM sao_carlos 
+                                   GROUP BY MÊS, CATEGORIA
+                                   ORDER BY MÊS, QUANTIDADE DESC;
+                                   """, conn=CONN)
+
+    categorias_temporal_pivot = categorias_temporal.pivot(index='MÊS', columns='CATEGORIA', values='QUANTIDADE').fillna(0)
+
+    st.caption('''
+            A categoria Equipe tem dois picos mais acentuados em junho de 2024 e de 2025.
+            ''', text_alignment='center')
+
+    st.line_chart(data=categorias_temporal_pivot, use_container_width=True)
+
+
+else:
+    categoria_ano = get_data(query=f"""
+                              SELECT strftime('%Y-%m', DATA) AS MÊS, CATEGORIA, COUNT(*) as QUANTIDADE 
+                              FROM sao_carlos 
+                              WHERE strftime('%Y', DATA) = '{option_safe}'
+                              GROUP BY MÊS, CATEGORIA
+                              ORDER BY MÊS, QUANTIDADE DESC;
+                              """, conn=CONN)
+
+    categoria_ano_pivot = categoria_ano.pivot(index='MÊS', columns='CATEGORIA', values='QUANTIDADE').fillna(0)
+
+    st.caption('''
+            
+            ''', text_alignment='center')
+    
+    st.line_chart(data=categoria_ano_pivot, use_container_width=True)
 
 # Fecha conexão
 CONN.close()
