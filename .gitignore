@@ -9,5 +9,6 @@ wheels/
 # Virtual environments
 .venv
 
-# Folder
+# Folders
 dados/
+CEF/
