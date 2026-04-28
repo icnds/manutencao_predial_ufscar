@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # ------------- #
-# Configurações #
+# CONFIGURAÇÕES #
 # ------------- #
 
 st.set_page_config(
@@ -14,7 +14,7 @@ st.set_page_config(
 )
 
 # ------- #
-# Funções #
+# FUNÇÕES #
 # ------- #
 
 def get_data(query, conn):
@@ -87,7 +87,7 @@ def plot_categorias_temporal(df):
     st.line_chart(data=df_pivot, width='stretch')
 
 # ------------------------------------- #
-# Título, apresentação e conexão SQLite #
+# TÍTULO, APRESENTACAO E CONEXÃO SQLite #
 # ------------------------------------- #
 
 st.title('Categorias')
@@ -100,10 +100,10 @@ st.write(
 )
 
 # Cria conexão com banco de dados
-CONN = sqlite3.connect('manutencao_predial_ufscar.db')
+CONN = sqlite3.connect('dados_tratados/dados_tratados.db')
 
 # ---------------- #
-# Categorias geral #
+# CATEGORIAS GERAL #
 # ---------------- #
 
 st.markdown('## Distribuição das categorias de manutenção predial')
@@ -150,7 +150,7 @@ else:
                           max_lim=100)
     
 # ------------------- #
-# Categorias temporal # 
+# CATEGORIAS TEMPORAL # 
 # ------------------- #
 
 st.markdown('## Categorias de manutenção predial ao longo do tempo')
@@ -187,5 +187,5 @@ else:
 
     plot_categorias_temporal(categoria_ano)
 
-# Fecha conexão
+# Fecha conexão e encerra sessão
 CONN.close()
