@@ -10,5 +10,6 @@ wheels/
 .venv
 
 # Folders
-dados/
-CEF/
+dados_brutos/
+dados_baixados/
+dados_tratados/
