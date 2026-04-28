@@ -11,7 +11,7 @@ import zipfile
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Cria pasta, caso ainda não exista
-os.makedirs('CEF', exist_ok=True)
+os.makedirs('dados_baixados', exist_ok=True)
 
 # URL da pasta compactada
 url = 'https://www.caixa.gov.br/Downloads/sinapi-relatorios-mensais/SINAPI-2025-05-formato-xlsx.zip'
@@ -25,7 +25,7 @@ try:
     response = requests.get(url, stream=True, headers=headers, verify=False, timeout=60)
     response.raise_for_status()
     
-    file_path = os.path.join('CEF', 'SINAPI-2025-05-formato-xlsx.zip')
+    file_path = os.path.join('dados_baixados', 'SINAPI-2025-05-formato-xlsx.zip')
     with open(file_path, 'wb') as f:
         for chunk in response.iter_content(chunk_size=8192):
             if chunk:
@@ -39,8 +39,8 @@ except Exception as e:
 # DESCOMPACTAR arquivo ZIP #
 # ------------------------ #
 
-zip_path = os.path.join('CEF', 'SINAPI-2025-05-formato-xlsx.zip')
-extract_path = os.path.join('CEF', 'SINAPI-2025-05')
+zip_path = os.path.join('dados_baixados', 'SINAPI-2025-05-formato-xlsx.zip')
+extract_path = os.path.join('dados_baixados', 'SINAPI-2025-05')
 
 # Cria pasta, caso ainda não exista
 os.makedirs(extract_path, exist_ok=True)

@@ -2,6 +2,7 @@ import glob
 import re
 import numpy as np
 import pandas as pd
+import os
 
 # ------------------- #
 # EXTRAÇÃO (EXTRACTT)
@@ -14,7 +15,7 @@ anos = [ano.split('\\')[1] for ano in pastas_anos]
 # Lista vazia para armazenar dados brutos
 dados_brutos = []
 for ano in anos:
-    planilhas_excel = glob.glob(f'dados\\{ano}\\*.xlsx')
+    planilhas_excel = glob.glob(f'dados_brutos\\{ano}\\*.xlsx')
     for planilha in planilhas_excel:
         # Encontra apenas arquivos com extensão .xlsx (planilhas Excel)
         match = re.search(r'(?<=\\)[^\\]+(?=\.xlsx)', planilha)
@@ -23,19 +24,19 @@ for ano in anos:
         # Leitura dos dados
         xls = pd.ExcelFile(planilha)
 
-        # A planilha de junho de 2024 é a única em que a segunda sheet tem 
-        # informações relevantes (em 2025 há uma separação: JUN-25A e JUN-25b)
+        # A planilha de junho de 2024 é a única em que a segunda aba também tem 
+        # informações relevantes (em 2025 há uma separação: JUN-25a e JUN-25b)
         if mes == 'JUN' and final_ano == '24':
-            dados1 = pd.read_excel(xls, sheet_name=xls.sheet_names[0], 
+            dados_parte1 = pd.read_excel(xls, sheet_name=xls.sheet_names[0], 
                               skiprows=13, usecols='A:N', engine='openpyxl')
-            dados1['MÊS'] = mes
-            dados1['ANO'] = '20' + final_ano
-            dados_brutos.append(dados1)
-            dados2 = pd.read_excel(xls, sheet_name=xls.sheet_names[1], 
+            dados_parte1['MÊS'] = mes
+            dados_parte1['ANO'] = '20' + final_ano
+            dados_brutos.append(dados_parte1)
+            dados_parte2 = pd.read_excel(xls, sheet_name=xls.sheet_names[1], 
                                    skiprows=13, usecols='A:N', engine='openpyxl')
-            dados2['MÊS'] = mes
-            dados2['ANO'] = '20' + final_ano
-            dados_brutos.append(dados2)
+            dados_parte2['MÊS'] = mes
+            dados_parte2['ANO'] = '20' + final_ano
+            dados_brutos.append(dados_parte2)
         else:
             dados = pd.read_excel(xls, sheet_name=xls.sheet_names[0], 
                                   skiprows=13, usecols='A:N', engine='openpyxl')
@@ -80,7 +81,7 @@ for dados in dados_brutos:
     mask = df[rows_to_drop].eq(rows_to_drop).any(axis=1)
     df = df[~mask].reset_index(drop=True)
 
-    # Converte as colunas MÊS e ANO para formato de data
+    # Converte as colunas MÊS e ANO para o formato de data
     mapa_meses = {
         'JAN': 1,
         'FEV': 2,
@@ -121,7 +122,7 @@ for dados in dados_brutos:
     df = df.fillna('NÃO PREENCHIDA')
 
     # Remove células com 'NÃO PREENCHIDA' nas colunas QUANT. e 'UNITÁRIO C/ BDI e DESCONTO', 
-    # pois são despesas não comprovadas pela empresa contratata
+    # pois são despesas não comprovadas pela empresa contratata, sendo desconsideradas
     df = df[df['QUANT.'] != 'NÃO PREENCHIDA']
     df = df[df['UNITÁRIO C/ BDI e DESCONTO'] != 'NÃO PREENCHIDA']
 
@@ -137,22 +138,26 @@ df_tratado['DESCRIÇÃO DAS ETAPAS'] = df_tratado['DESCRIÇÃO DAS ETAPAS'].appl
 # Cria coluna booleana para correções
 df_tratado['CORREÇÃO'] = 'NÃO'
 
-# Tratamento de exceção (linha de desconto despadronizada em relação às demais correções)
+# Tratamento de exceção: linha de desconto despadronizada em relação às demais correções
 desconto_linha = df_tratado[df_tratado['TIPO'] == 'Desconto Item 3.11 pago na medição 25']
-desconto_data_atual = desconto_linha['DATA'].values[0]
-desconto_mes_anterior = desconto_data_atual.month - 1 if desconto_data_atual.month > 1 else 12
-desconto_ano_anterior = desconto_data_atual.year if desconto_mes_anterior != 12 else desconto_data_atual.year - 1
-linha_descontada = df_tratado[(df_tratado['ITEM'] == '3.11') & 
-                              (df_tratado['DATA'].dt.month == desconto_mes_anterior) & 
-                              (df_tratado['DATA'].dt.year == desconto_ano_anterior)]
-linha_descontada_idx = linha_descontada.index.tolist()[0]
+desconto_data = desconto_linha['DATA'].values[0]
 
+# Calcula mês e ano anterior
+mes_anterior = desconto_data.month - 1 if desconto_data.month > 1 else 12
+ano_anterior = desconto_data.year - (1 if desconto_data.month == 1 else 0)
+
+linha_descontada = df_tratado[(df_tratado['ITEM'] == '3.11') & 
+                              (df_tratado['DATA'].dt.month == mes_anterior) & 
+                              (df_tratado['DATA'].dt.year == ano_anterior)]
 print(f'\nLinha do primeiro desconto aplicado (JUL-24):\n\n {linha_descontada}')
+
+# Encontra o índice da linha do desconto
+linha_descontada_idx = linha_descontada.index.tolist()[0]
 
 # Cria cópia da linha do desconto
 linha_a_ser_duplicada = df_tratado.loc[[linha_descontada_idx]].copy()
 
-# Altera valores da cópia da linha do desconto
+# Altera valores da linha do desconto copiada
 linha_a_ser_duplicada['CORREÇÃO'] = 'SIM'
 linha_a_ser_duplicada['UNITÁRIO C/ BDI e DESCONTO'] = desconto_linha['UNITÁRIO C/ BDI e DESCONTO'].values[0]
 linha_a_ser_duplicada['TOTAL DA ETAPA'] = desconto_linha['TOTAL DA ETAPA'].values[0]
@@ -300,7 +305,10 @@ print(manutencao_predial_ufscar.info())
 # CARREGAMENTO (LOAD)
 # ------------------- #
 
+# Cria pasta, caso ainda não exista
+os.makedirs('dados_extraidos', exist_ok=True)
+
 # Exporta DataFrame para arquivo CSV
 # - index=False → evita salvar o índice (0,1,2) como coluna extra
 # - encoding='utf-8' → para que caracteres especiais fiquem corretos
-manutencao_predial_ufscar.to_csv('manutencao_predial_ufscar.csv', index=False, encoding='utf-8')
+manutencao_predial_ufscar.to_csv('dados_extraidos/dados_extraidos.csv', index=False, encoding='utf-8')
