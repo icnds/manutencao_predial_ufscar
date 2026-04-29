@@ -14,3 +14,5 @@ st.markdown(
     Universidade Federal de São Carlos ([UFSCar](https://www.ufscar.br/)).
 """
 )
+
+st.page_link('pages/1_Categorias.py', label='Categorias', icon='1️⃣')
