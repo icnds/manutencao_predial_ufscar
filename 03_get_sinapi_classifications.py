@@ -54,7 +54,10 @@ df['BANCO'] = df['BANCO'].replace(banco_mapping)
 
 # Atribui classificação apenas às linhas SINAPI
 mask = df['BANCO'] == 'SINAPI'
-df.loc[mask, 'CLASSIFICAÇÃO SINAPI'] = df.loc[mask, 'CÓDIGO'].map(lambda k: isd_dict.get(k, csd_dict.get(k, '0')))
+df.loc[mask, 'CLASSIFICAÇÃO SINAPI'] = df.loc[mask, 'CÓDIGO'].map(lambda k: isd_dict.get(k, csd_dict.get(k, 'NÃO ENCONTRADO')))
+df['CLASSIFICAÇÃO SINAPI'] = df['CLASSIFICAÇÃO SINAPI'].fillna(value='NÃO SINAPI') # Outras tabelas oficiais previstas em contrato (coluna BANCO)
+df['CLASSIFICAÇÃO SINAPI'] = df['CLASSIFICAÇÃO SINAPI'].str.upper()
+
 print(df.head())
 print()
 print(df['BANCO'].value_counts())
