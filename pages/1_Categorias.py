@@ -17,8 +17,14 @@ st.set_page_config(
 # CONSTANTES #
 # ---------- #
 
+ANOS = ('2023 - 2025', '2023', '2024', '2025')
 CUSTOM_PALETTE = ['#83C9FF','#FFABAB','#0068C9']
 FACECOLOR = '#1D293D'
+MESES = {
+    '01': 'Jan', '02': 'Fev', '03': 'Mar', '04': 'Abr',
+    '05': 'Mai', '06': 'Jun', '07': 'Jul', '08': 'Ago',
+    '09': 'Set', '10': 'Out', '11': 'Nov', '12': 'Dez'
+    }
 
 # ------- #
 # FUNÇÕES #
@@ -110,7 +116,7 @@ def plot_temporal(df, idx, col, value):
     st.caption('''
 
                ''', text_alignment='center')
-    st.line_chart(data=df_pivot, x_label=f'ANO ( {periodo} )', y_label='R$')
+    st.line_chart(data=df_pivot, x_label='PERÍODO', y_label='R$')
 
 # ------------------------------------- #
 # TÍTULO, APRESENTACAO E CONEXÃO SQLite #
@@ -132,10 +138,9 @@ CONN = sqlite3.connect('dados_tratados/dados_tratados.db')
 # SELETOR DE PERÍODO #
 # ------------------ #
 
-anos = ('2023 - 2025', '2023', '2024', '2025')
 periodo = st.selectbox(
     'Período:',
-    options=anos,
+    options=ANOS,
     index=0, 
     label_visibility='hidden'
 )
@@ -203,8 +208,21 @@ if periodo == '2023 - 2025':
                                    GROUP BY MÊS, CATEGORIA
                                    ORDER BY MÊS, TOTAL DESC;
                                    """, conn=CONN)
+    
+    # Formata data
+    categoria_ano_formatado = categorias_temporal.copy()
+    categoria_ano_formatado['MÊS_NOME'] = categoria_ano_formatado['MÊS'].str.split('-').str[1].map(MESES) + ' - ' + categoria_ano_formatado['MÊS'].str.split('-').str[0]
+    
+    anos = ('2023', '2024', '2025')
+    meses = ('Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
+            'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez')
+    ordem_meses = [f'{mes} - {ano}' for ano in anos for mes in meses]
+    
+    categoria_ano_formatado['MÊS_NOME'] = pd.Categorical(categoria_ano_formatado['MÊS_NOME'], categories=ordem_meses, ordered=True)
+    categoria_ano_formatado = categoria_ano_formatado.sort_values('MÊS_NOME')
+
     # Gráfico de linhas
-    plot_temporal(categorias_temporal, idx='MÊS', col='CATEGORIA', value='TOTAL')
+    plot_temporal(categoria_ano_formatado, idx='MÊS_NOME', col='CATEGORIA', value='TOTAL')
 
 else:
     
@@ -273,19 +291,15 @@ else:
                               GROUP BY MÊS, CATEGORIA
                               ORDER BY MÊS, TOTAL DESC;
                               """, conn=CONN)
-    meses = {
-    '01': 'Jan', '02': 'Fev', '03': 'Mar', '04': 'Abr',
-    '05': 'Mai', '06': 'Jun', '07': 'Jul', '08': 'Ago',
-    '09': 'Set', '10': 'Out', '11': 'Nov', '12': 'Dez'
-    }
-    
+    # Formata data
     categoria_ano_formatado = categoria_ano.copy()
-    categoria_ano_formatado['MÊS_NOME'] = categoria_ano_formatado['MÊS'].str.split('-').str[1].map(meses)
+    categoria_ano_formatado['MÊS_NOME'] = categoria_ano_formatado['MÊS'].str.split('-').str[1].map(MESES) + ' - ' + categoria_ano_formatado['MÊS'].str.split('-').str[0]
     
-    ordem_meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
-                   'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+    ordem_meses = [f'Jan - {periodo}', f'Fev - {periodo}', f'Mar - {periodo}', f'Abr - {periodo}', f'Mai - {periodo}', f'Jun - {periodo}', 
+                   f'Jul - {periodo}', f'Ago - {periodo}', f'Set - {periodo}', f'Out - {periodo}', f'Nov - {periodo}', f'Dez - {periodo}']
     
     categoria_ano_formatado['MÊS_NOME'] = pd.Categorical(categoria_ano_formatado['MÊS_NOME'], categories=ordem_meses, ordered=True)
+    categoria_ano_formatado['MÊS_NOME'] = categoria_ano_formatado['MÊS_NOME']
     categoria_ano_formatado = categoria_ano_formatado.sort_values('MÊS_NOME')
 
     # Gráfico de linhas
