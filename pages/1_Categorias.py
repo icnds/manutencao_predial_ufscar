@@ -157,7 +157,7 @@ if periodo == '2023 - 2025':
     if not on:
         # Consulta SQL para obtenção do DataFrame
         categorias_geral = get_data(query="""
-                                    SELECT CATEGORIA, SUM(`TOTAL DA ETAPA`) as TOTAL
+                                    SELECT CATEGORIA, SUM(`TOTAL DA ETAPA`) AS TOTAL
                                     FROM sao_carlos 
                                     GROUP BY CATEGORIA
                                     ORDER BY TOTAL DESC;
@@ -178,7 +178,10 @@ if periodo == '2023 - 2025':
     else:
         # Consulta SQL para obtenção do DataFrame
         categorias_geral = get_data(query="""
-                                    SELECT CATEGORIA, SUM(`TOTAL DA ETAPA`) * 1.0 / (SELECT SUM(`TOTAL DA ETAPA`) FROM sao_carlos) AS TOTAL
+                                    SELECT CATEGORIA, 
+                                        SUM(`TOTAL DA ETAPA`) * 1.0 / 
+                                        (SELECT SUM(`TOTAL DA ETAPA`) 
+                                        FROM sao_carlos) AS TOTAL
                                     FROM sao_carlos 
                                     GROUP BY CATEGORIA
                                     ORDER BY TOTAL DESC;
@@ -203,7 +206,8 @@ if periodo == '2023 - 2025':
 
     # Consulta SQL para obtenção do DataFrame
     categorias_temporal = get_data(query="""
-                                   SELECT strftime('%Y-%m', DATA) AS MÊS, CATEGORIA, SUM(`TOTAL DA ETAPA`) as TOTAL 
+                                   SELECT strftime('%Y-%m', DATA) AS MÊS, 
+                                        CATEGORIA, SUM(`TOTAL DA ETAPA`) AS TOTAL 
                                    FROM sao_carlos 
                                    GROUP BY MÊS, CATEGORIA
                                    ORDER BY MÊS, TOTAL DESC;
@@ -233,7 +237,7 @@ else:
     if not on:
         # Consulta SQL para obtenção do DataFrame
         categorias_geral = get_data(query=f"""
-                                    SELECT CATEGORIA, SUM(`TOTAL DA ETAPA`) as TOTAL
+                                    SELECT CATEGORIA, SUM(`TOTAL DA ETAPA`) AS TOTAL
                                     FROM sao_carlos
                                     WHERE strftime('%Y', DATA) = '{option_safe}'
                                     GROUP BY CATEGORIA
@@ -257,8 +261,9 @@ else:
         categorias_geral = get_data(query=f"""
                                     SELECT CATEGORIA, 
                                         SUM(`TOTAL DA ETAPA`) * 1.0 / 
-                                        (SELECT SUM(`TOTAL DA ETAPA`) FROM sao_carlos 
-                                            WHERE strftime('%Y', DATA) = '{option_safe}') 
+                                        (SELECT SUM(`TOTAL DA ETAPA`) 
+                                        FROM sao_carlos 
+                                        WHERE strftime('%Y', DATA) = '{option_safe}') 
                                         AS TOTAL
                                     FROM sao_carlos
                                     WHERE strftime('%Y', DATA) = '{option_safe}'
@@ -285,7 +290,8 @@ else:
 
     # Consulta SQL para obtenção do DataFrame
     categoria_ano = get_data(query=f"""
-                              SELECT strftime('%Y-%m', DATA) AS MÊS, CATEGORIA, SUM(`TOTAL DA ETAPA`) as TOTAL 
+                              SELECT strftime('%Y-%m', DATA) AS MÊS, 
+                                    CATEGORIA, SUM(`TOTAL DA ETAPA`) AS TOTAL 
                               FROM sao_carlos 
                               WHERE strftime('%Y', DATA) = '{option_safe}'
                               GROUP BY MÊS, CATEGORIA
