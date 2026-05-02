@@ -16,3 +16,4 @@ st.markdown(
 )
 
 st.page_link('pages/1_Categorias.py', label='Categorias', icon='1️⃣')
+st.page_link('pages/2_Tabelas.py', label='Tabelas', icon='2️⃣')
