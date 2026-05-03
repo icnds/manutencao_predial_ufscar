@@ -63,20 +63,35 @@ def tratar_tabela(tabelas_df, col, tipo):
     if tipo == 'valor':
         df = tabelas_df.copy()
         df = df.sort_values(by=[col], ascending=False)
-        df['TOTAL'] = df['TOTAL'].apply(lambda x: f'R$ {x:,.2f}'.replace(',', '_').replace('.', ',').replace('_', '.'))
-        df['PERCENTUAL'] = df['PERCENTUAL'].apply(lambda x: f'{x:,.2f}%'.replace(',', '_').replace('.', ',').replace('_', '.'))
         return df.reset_index(drop=True)
     else:
         df = tabelas_df.copy()
         df = df.sort_values(by=[col], ascending=False)
-        df['TOTAL'] = df['TOTAL'].apply(lambda x: f'{x:,.0f}'.replace(',', '_').replace('.', ',').replace('_', '.'))
-        df['PERCENTUAL'] = df['PERCENTUAL'].apply(lambda x: f'{x:,.2f}%'.replace(',', '_').replace('.', ',').replace('_', '.'))
         return df.reset_index(drop=True)
 
 
-def exibir_tabela(df):
+def exibir_tabela(df, tipo):
+
+    if tipo == 'total':
+        df = (df.pivot(index='CATEGORIA', columns='TABELA', values='TOTAL')
+              .assign(TOTAL=lambda x: x.sum(axis=1))
+              .fillna('0,00')
+              .map(lambda x: f'{x:,.2f}'.replace(',', '_').replace('.', ',').replace('_', '.') if isinstance(x, (int, float)) else x))
+    else:
+        df = (df.pivot(index='CATEGORIA', columns='TABELA', values='PERCENTUAL')
+              .assign(TOTAL=lambda x: x.sum(axis=1))
+              .fillna('0 %'))
+        colunas_para_formatar = [col for col in df.columns if col != 'TOTAL']
+        df[colunas_para_formatar] = df[colunas_para_formatar].map(
+            lambda x: f'{x:,.1f} %'.replace(',', '_').replace('.', ',').replace('_', '.') 
+            if isinstance(x, (int, float)) else x
+        )
+        df['TOTAL'] = df['TOTAL'].map(
+        lambda x: f'{x:,.0f} %'.replace(',', '_').replace('.', ',').replace('_', '.') 
+        if isinstance(x, (int, float)) else x
+        )
+
     st.table(df, border='horizontal')
-    st.caption('Observação: percentuais em relação ao total por categoria.')
 
 
 def formato_moeda(x, pos):
@@ -92,7 +107,7 @@ def formato_contagem(x, pos):
 
 
 def exibir_grafico(df, col, max_lim, tipo):
-    
+
     # Configura tamanho da figura e cor de fundo
     plt.figure(figsize=(7, 4), facecolor=FACECOLOR)
             
@@ -178,7 +193,7 @@ periodo = st.selectbox(
 
 if periodo == '2023 - 2025':
 
-    st.markdown('## Recorrência por tabela de consulta e categoria')
+    st.markdown('## Recorrência por categoria e tabela de consulta')
 
     # Quantidade
     tabela_quantidade = obter_tabela(query="""
@@ -188,45 +203,24 @@ if periodo == '2023 - 2025':
                                     ORDER BY TOTAL DESC;
                                     """)
     
-    on = st.toggle('%', key='quantidade')
-    if not on:
-
-        # DataFrame completo
-        st.caption('''
+    # DataFrame completo
+    st.caption('''
                             
-                    ''', text_alignment='left')
+                ''', text_alignment='left')
         
-        # Obtém tabela ordenada e formatada
-        tabela_total = tratar_tabela(tabelas_df=tabela_quantidade, col='TOTAL', tipo='quantidade')
+    # Obtém tabela ordenada e formatada
+    tabela_percentual = tratar_tabela(tabelas_df=tabela_quantidade, col='PERCENTUAL', tipo='quantidade')
 
-        # Exibe tabela tratada
-        exibir_tabela(df=tabela_total)
+    # Exibe tabela tratada
+    exibir_tabela(df=tabela_percentual, tipo='percentual')
 
-        # Exibe gráfico de barras
-        exibir_grafico(df=tabela_quantidade, col='TOTAL', 
-                       max_lim=tabela_quantidade['TOTAL'].max() * 1.1, 
-                       tipo='quantidade_total')
-        
-    else:
-
-        # DataFrame completo
-        st.caption('''
-                            
-                    ''', text_alignment='left')
-        
-        # Obtém tabela ordenada e formatada
-        tabela_percentual = tratar_tabela(tabelas_df=tabela_quantidade, col='PERCENTUAL', tipo='quantidade')
-
-        # Exibe tabela tratada
-        exibir_tabela(df=tabela_percentual)
-
-        # Exibe o gráfico de barras
-        exibir_grafico(df=tabela_quantidade, col='PERCENTUAL', 
-                       max_lim=tabela_quantidade['PERCENTUAL'].max() * 1.2, 
-                       tipo='quantidade_percentual')
+    # Exibe o gráfico de barras
+    exibir_grafico(df=tabela_quantidade, col='PERCENTUAL', 
+                    max_lim=tabela_quantidade['PERCENTUAL'].max(), 
+                    tipo='quantidade_percentual')
 
     
-    st.markdown('## Despesas por tabela de consulta e categoria')
+    st.markdown('## Despesas por categoria e tabela de consulta')
 
     # Valor (R$)
     tabela_valor = obter_tabela(query="""
@@ -236,26 +230,8 @@ if periodo == '2023 - 2025':
                                 ORDER BY TOTAL DESC;
                                 """)       
 
-    on = st.toggle('%', key='valor')
+    on = st.toggle('R$', key='valor')
     if not on:
-
-        # DataFrame completo
-        st.caption('''
-                            
-                    ''', text_alignment='left')
-        
-        # Obtém tabela ordenada e formatada
-        tabela_total = tratar_tabela(tabelas_df=tabela_valor, col='TOTAL', tipo='valor')
-
-        # Exibe tabela tratada
-        exibir_tabela(df=tabela_total)
-
-        # Exibe gráfico de barras
-        exibir_grafico(df=tabela_valor, col='TOTAL', 
-                       max_lim=tabela_valor['TOTAL'].max() * 1.1, 
-                       tipo='valor_total')
-        
-    else:
 
         # DataFrame completo
         st.caption('''
@@ -266,16 +242,34 @@ if periodo == '2023 - 2025':
         tabela_percentual = tratar_tabela(tabelas_df=tabela_valor, col='PERCENTUAL', tipo='valor')
 
         # Exibe tabela tratada
-        exibir_tabela(df=tabela_percentual)
+        exibir_tabela(df=tabela_percentual, tipo='percentual')
 
         # Exibe o gráfico de barras
         exibir_grafico(df=tabela_valor, col='PERCENTUAL', 
-                       max_lim=tabela_valor['PERCENTUAL'].max() * 1.2, 
+                       max_lim=tabela_valor['PERCENTUAL'].max(), 
                        tipo='valor_percentual')
+    
+    else:
+
+        # DataFrame completo
+        st.caption('''
+                            
+                    ''', text_alignment='left')
+        
+        # Obtém tabela ordenada e formatada
+        tabela_total = tratar_tabela(tabelas_df=tabela_valor, col='TOTAL', tipo='valor')
+
+        # Exibe tabela tratada
+        exibir_tabela(df=tabela_total, tipo='total')
+
+        # Exibe gráfico de barras
+        exibir_grafico(df=tabela_valor, col='TOTAL', 
+                       max_lim=tabela_valor['TOTAL'].max() * 1.1, 
+                       tipo='valor_total')
 
 else:
 
-    st.markdown('## Recorrência por tabela de consulta e categoria')
+    st.markdown('## Recorrência por categoria e tabela de consulta')
 
     option_safe = str(periodo).strip()
 
@@ -288,45 +282,24 @@ else:
                                      ORDER BY TOTAL DESC;
                                      """)
     
-    on = st.toggle('%', key='quantidade')
-    if not on:
-
-        # DataFrame completo
-        st.caption('''
+    # DataFrame completo
+    st.caption('''
                             
-                    ''', text_alignment='left')
+                ''', text_alignment='left')
         
-        # Obtém tabela ordenada e formatada
-        tabela_total = tratar_tabela(tabelas_df=tabela_quantidade, col='TOTAL', tipo='quantidade')
+    # Obtém tabela ordenada e formatada
+    tabela_percentual = tratar_tabela(tabelas_df=tabela_quantidade, col='PERCENTUAL', tipo='quantidade')
 
-        # Exibe tabela tratada
-        exibir_tabela(df=tabela_total)
+    # Exibe tabela tratada
+    exibir_tabela(df=tabela_percentual, tipo='percentual')
 
-        # Exibe gráfico de barras
-        exibir_grafico(df=tabela_quantidade, col='TOTAL', 
-                       max_lim=tabela_quantidade['TOTAL'].max() * 1.1, 
-                       tipo='quantidade_total')
-        
-    else:
-
-        # DataFrame completo
-        st.caption('''
-                            
-                    ''', text_alignment='left')
-        
-        # Obtém tabela ordenada e formatada
-        tabela_percentual = tratar_tabela(tabelas_df=tabela_quantidade, col='PERCENTUAL', tipo='quantidade')
-
-        # Exibe tabela tratada
-        exibir_tabela(df=tabela_percentual)
-
-        # Exibe o gráfico de barras
-        exibir_grafico(df=tabela_quantidade, col='PERCENTUAL', 
-                       max_lim=tabela_quantidade['PERCENTUAL'].max() * 1.2, 
-                       tipo='quantidade_percentual')
+    # Exibe o gráfico de barras
+    exibir_grafico(df=tabela_quantidade, col='PERCENTUAL', 
+                    max_lim=tabela_quantidade['PERCENTUAL'].max(), 
+                    tipo='quantidade_percentual')
 
 
-    st.markdown('## Despesas por tabela de consulta e categoria')
+    st.markdown('## Despesas por categoria e tabela de consulta')
 
     # Valor (R$)
     tabela_valor = obter_tabela(query=f"""
@@ -337,8 +310,26 @@ else:
                                 ORDER BY TOTAL DESC;
                                 """)       
 
-    on = st.toggle('%', key='valor')
+    on = st.toggle('R$', key='valor')
     if not on:
+        
+        # DataFrame completo
+        st.caption('''
+                            
+                    ''', text_alignment='left')
+        
+        # Obtém tabela ordenada e formatada
+        tabela_percentual = tratar_tabela(tabelas_df=tabela_valor, col='PERCENTUAL', tipo='valor')
+
+        # Exibe tabela tratada
+        exibir_tabela(df=tabela_percentual, tipo='percentual')
+
+        # Exibe o gráfico de barras
+        exibir_grafico(df=tabela_valor, col='PERCENTUAL', 
+                       max_lim=tabela_valor['PERCENTUAL'].max(), 
+                       tipo='valor_percentual')
+    
+    else:
 
         # DataFrame completo
         st.caption('''
@@ -349,30 +340,13 @@ else:
         tabela_total = tratar_tabela(tabelas_df=tabela_valor, col='TOTAL', tipo='valor')
 
         # Exibe tabela tratada
-        exibir_tabela(df=tabela_total)
+        exibir_tabela(df=tabela_total, tipo='total')
 
         # Exibe gráfico de barras
         exibir_grafico(df=tabela_valor, col='TOTAL', 
                        max_lim=tabela_valor['TOTAL'].max() * 1.1, 
                        tipo='valor_total')
-        
-    else:
 
-        # DataFrame completo
-        st.caption('''
-                            
-                    ''', text_alignment='left')
-        
-        # Obtém tabela ordenada e formatada
-        tabela_percentual = tratar_tabela(tabelas_df=tabela_valor, col='PERCENTUAL', tipo='valor')
-
-        # Exibe tabela tratada
-        exibir_tabela(df=tabela_percentual)
-
-        # Exibe o gráfico de barras
-        exibir_grafico(df=tabela_valor, col='PERCENTUAL', 
-                       max_lim=tabela_valor['PERCENTUAL'].max() * 1.2, 
-                       tipo='valor_percentual')
 
 # Fecha conexão e encerra sessão
 CONN.close()
