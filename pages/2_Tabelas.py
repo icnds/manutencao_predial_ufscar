@@ -272,4 +272,107 @@ if periodo == '2023 - 2025':
         exibir_grafico(df=tabela_valor, col='PERCENTUAL', 
                        max_lim=tabela_valor['PERCENTUAL'].max() * 1.2, 
                        tipo='valor_percentual')
+
+else:
+
+    st.markdown('## Recorrência por tabela de consulta e categoria')
+
+    option_safe = str(periodo).strip()
+
+    # Quantidade
+    tabela_quantidade = obter_tabela(query=f"""
+                                     SELECT BANCO, CATEGORIA, COUNT(*) AS TOTAL
+                                     FROM sao_carlos
+                                     WHERE strftime('%Y', DATA) = '{option_safe}'
+                                     GROUP BY CATEGORIA, BANCO
+                                     ORDER BY TOTAL DESC;
+                                     """)
+    
+    on = st.toggle('%', key='quantidade')
+    if not on:
+
+        # DataFrame completo
+        st.caption('''
+                            
+                    ''', text_alignment='left')
         
+        # Obtém tabela ordenada e formatada
+        tabela_total = tratar_tabela(tabelas_df=tabela_quantidade, col='TOTAL', tipo='quantidade')
+
+        # Exibe tabela tratada
+        exibir_tabela(df=tabela_total)
+
+        # Exibe gráfico de barras
+        exibir_grafico(df=tabela_quantidade, col='TOTAL', 
+                       max_lim=tabela_quantidade['TOTAL'].max() * 1.1, 
+                       tipo='quantidade_total')
+        
+    else:
+
+        # DataFrame completo
+        st.caption('''
+                            
+                    ''', text_alignment='left')
+        
+        # Obtém tabela ordenada e formatada
+        tabela_percentual = tratar_tabela(tabelas_df=tabela_quantidade, col='PERCENTUAL', tipo='quantidade')
+
+        # Exibe tabela tratada
+        exibir_tabela(df=tabela_percentual)
+
+        # Exibe o gráfico de barras
+        exibir_grafico(df=tabela_quantidade, col='PERCENTUAL', 
+                       max_lim=tabela_quantidade['PERCENTUAL'].max() * 1.2, 
+                       tipo='quantidade_percentual')
+
+
+    st.markdown('## Despesas por tabela de consulta e categoria')
+
+    # Valor (R$)
+    tabela_valor = obter_tabela(query=f"""
+                                SELECT BANCO, CATEGORIA, SUM(`TOTAL DA ETAPA`) AS TOTAL
+                                FROM sao_carlos
+                                WHERE strftime('%Y', DATA) = '{option_safe}'
+                                GROUP BY CATEGORIA, BANCO
+                                ORDER BY TOTAL DESC;
+                                """)       
+
+    on = st.toggle('%', key='valor')
+    if not on:
+
+        # DataFrame completo
+        st.caption('''
+                            
+                    ''', text_alignment='left')
+        
+        # Obtém tabela ordenada e formatada
+        tabela_total = tratar_tabela(tabelas_df=tabela_valor, col='TOTAL', tipo='valor')
+
+        # Exibe tabela tratada
+        exibir_tabela(df=tabela_total)
+
+        # Exibe gráfico de barras
+        exibir_grafico(df=tabela_valor, col='TOTAL', 
+                       max_lim=tabela_valor['TOTAL'].max() * 1.1, 
+                       tipo='valor_total')
+        
+    else:
+
+        # DataFrame completo
+        st.caption('''
+                            
+                    ''', text_alignment='left')
+        
+        # Obtém tabela ordenada e formatada
+        tabela_percentual = tratar_tabela(tabelas_df=tabela_valor, col='PERCENTUAL', tipo='valor')
+
+        # Exibe tabela tratada
+        exibir_tabela(df=tabela_percentual)
+
+        # Exibe o gráfico de barras
+        exibir_grafico(df=tabela_valor, col='PERCENTUAL', 
+                       max_lim=tabela_valor['PERCENTUAL'].max() * 1.2, 
+                       tipo='valor_percentual')
+
+# Fecha conexão e encerra sessão
+CONN.close()
