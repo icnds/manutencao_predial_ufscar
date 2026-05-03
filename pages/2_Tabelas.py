@@ -18,8 +18,7 @@ st.set_page_config(
 # CONSTANTES #
 # ---------- #
 
-ANOS = ('2023 - 2025', '2023', '2024', '2025')
-OUTRAS_TABELAS = ['SBC', 'PRÓPRIA', 'SIURB', 'NÃO PREENCHIDA', 'SETOP']
+OUTRAS_TABELAS = ('SBC', 'PRÓPRIA', 'SIURB', 'NÃO PREENCHIDA', 'SETOP')
 CUSTOM_PALETTE = {'EQUIPE': '#83C9FF', 
          'SERVIÇOS / EQUIPAMENTOS': '#FFABAB', 
          'MATERIAIS': '#0068C9'}
@@ -80,6 +79,18 @@ def exibir_tabela(df):
     st.caption('Observação: percentuais em relação ao total por categoria.')
 
 
+def formato_moeda(x, pos):
+    return f'R$ {x:,.0f}'.replace(',', '_').replace('.', ',').replace('_', '.')
+
+
+def formato_percentual(x, pos):
+    return f'{x:,.0f}%'
+
+
+def formato_contagem(x, pos):
+    return f'{x:,.0f}'.replace(',', '_').replace('.', ',').replace('_', '.')
+
+
 def exibir_grafico(df, col, max_lim, tipo):
     
     # Configura tamanho da figura e cor de fundo
@@ -118,7 +129,7 @@ def exibir_grafico(df, col, max_lim, tipo):
     elif tipo == 'valor_percentual' or tipo == 'quantidade_percentual': 
         ax.yaxis.set_major_formatter(FuncFormatter(formato_percentual))
     elif tipo == 'quantidade total':
-        pass    
+        ax.yaxis.set_major_formatter(FuncFormatter(formato_contagem))    
 
     plt.legend(
         facecolor=FACECOLOR,
@@ -132,18 +143,6 @@ def exibir_grafico(df, col, max_lim, tipo):
     # Exibe gráfico no Streamlit
     st.pyplot(plt)
 
-
-def formato_moeda(x, pos):
-    return f'R$ {x:,.0f}'.replace(',', '_').replace('.', ',').replace('_', '.')
-
-
-def formato_percentual(x, pos):
-    return f'{x:,.0f}%'
-
-
-def formato_contagem(x, pos):
-    return f'{x:,.0f}'.replace(',', '_').replace('.', ',').replace('_', '.')
-
 # ------------------------------------- #
 # TÍTULO, APRESENTACAO E CONEXÃO SQLite #
 # ------------------------------------- #
@@ -156,6 +155,15 @@ CONN = sqlite3.connect('dados_tratados/dados_tratados.db')
 # ------------------ #
 # SELETOR DE PERÍODO #
 # ------------------ #
+
+tabela_anos = get_data(query="""
+                       SELECT strftime('%Y', DATA) AS ANO 
+                       FROM sao_carlos 
+                       ORDER BY ANO ASC;
+                       """, conn=CONN)
+
+lista_anos = tabela_anos['ANO'].unique().tolist()
+ANOS = [f'{lista_anos[0]} - {lista_anos[-1]}'] + list(lista_anos)
 
 periodo = st.selectbox(
     'Período:',

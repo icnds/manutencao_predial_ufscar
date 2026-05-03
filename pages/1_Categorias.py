@@ -17,7 +17,6 @@ st.set_page_config(
 # CONSTANTES #
 # ---------- #
 
-ANOS = ('2023 - 2025', '2023', '2024', '2025')
 CUSTOM_PALETTE = {'EQUIPE': '#83C9FF', 
          'SERVIÇOS / EQUIPAMENTOS': '#FFABAB', 
          'MATERIAIS': '#0068C9'}
@@ -139,6 +138,15 @@ CONN = sqlite3.connect('dados_tratados/dados_tratados.db')
 # ------------------ #
 # SELETOR DE PERÍODO #
 # ------------------ #
+
+tabela_anos = get_data(query="""
+                       SELECT strftime('%Y', DATA) AS ANO 
+                       FROM sao_carlos 
+                       ORDER BY ANO ASC;
+                       """, conn=CONN)
+
+lista_anos = tabela_anos['ANO'].unique().tolist()
+ANOS = [f'{lista_anos[0]} - {lista_anos[-1]}'] + list(lista_anos)
 
 periodo = st.selectbox(
     'Período:',
