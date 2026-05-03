@@ -20,6 +20,9 @@ st.set_page_config(
 
 ANOS = ('2023 - 2025', '2023', '2024', '2025')
 OUTRAS_TABELAS = ['SBC', 'PRÓPRIA', 'SIURB', 'NÃO PREENCHIDA', 'SETOP']
+CUSTOM_PALETTE = {'EQUIPE': '#83C9FF', 
+         'SERVIÇOS / EQUIPAMENTOS': '#FFABAB', 
+         'MATERIAIS': '#0068C9'}
 FACECOLOR = '#1D293D'
 
 # ------- #
@@ -77,14 +80,14 @@ def exibir_tabela(df):
     st.caption('Observação: percentuais em relação ao total por categoria.')
 
 
-def exibir_grafico(df, col, custom_palette, max_lim, tipo):
+def exibir_grafico(df, col, max_lim, tipo):
     
     # Configura tamanho da figura e cor de fundo
     plt.figure(figsize=(7, 4), facecolor=FACECOLOR)
             
     # Gráfico de barras
     sns.barplot(df.sort_values(by=[col], ascending=False), x='TABELA', y=col, hue='CATEGORIA', 
-                 estimator='sum', errorbar=None, palette=custom_palette)
+                 estimator='sum', errorbar=None, palette=CUSTOM_PALETTE)
         
     # Altera cor de fundo dos eixos
     plt.gca().set_facecolor(FACECOLOR)
@@ -192,8 +195,9 @@ if periodo == '2023 - 2025':
         exibir_tabela(df=tabela_total)
 
         # Exibe gráfico de barras
-        exibir_grafico(df=tabela_quantidade, col='TOTAL', max_lim=tabela_quantidade['TOTAL'].max() * 1.1,
-                       custom_palette=('#0068C9', '#83C9FF','#FFABAB'), tipo='quantidade_total')
+        exibir_grafico(df=tabela_quantidade, col='TOTAL', 
+                       max_lim=tabela_quantidade['TOTAL'].max() * 1.1, 
+                       tipo='quantidade_total')
         
     else:
 
@@ -209,8 +213,9 @@ if periodo == '2023 - 2025':
         exibir_tabela(df=tabela_percentual)
 
         # Exibe o gráfico de barras
-        exibir_grafico(df=tabela_quantidade, col='PERCENTUAL', max_lim=tabela_quantidade['PERCENTUAL'].max() * 1.2,
-                       custom_palette=('#83C9FF','#0068C9','#FFABAB'), tipo='quantidade_percentual')
+        exibir_grafico(df=tabela_quantidade, col='PERCENTUAL', 
+                       max_lim=tabela_quantidade['PERCENTUAL'].max() * 1.2, 
+                       tipo='quantidade_percentual')
 
     
     st.markdown('## Despesas por tabela de consulta e categoria')
@@ -238,8 +243,9 @@ if periodo == '2023 - 2025':
         exibir_tabela(df=tabela_total)
 
         # Exibe gráfico de barras
-        exibir_grafico(df=tabela_valor, col='TOTAL', max_lim=tabela_valor['TOTAL'].max() * 1.1,
-                       custom_palette=('#83C9FF','#FFABAB','#0068C9'), tipo='valor_total')
+        exibir_grafico(df=tabela_valor, col='TOTAL', 
+                       max_lim=tabela_valor['TOTAL'].max() * 1.1, 
+                       tipo='valor_total')
         
     else:
 
@@ -255,5 +261,7 @@ if periodo == '2023 - 2025':
         exibir_tabela(df=tabela_percentual)
 
         # Exibe o gráfico de barras
-        exibir_grafico(df=tabela_valor, col='PERCENTUAL', max_lim=tabela_valor['PERCENTUAL'].max() * 1.2,
-                       custom_palette=('#83C9FF','#0068C9','#FFABAB'), tipo='valor_percentual')
+        exibir_grafico(df=tabela_valor, col='PERCENTUAL', 
+                       max_lim=tabela_valor['PERCENTUAL'].max() * 1.2, 
+                       tipo='valor_percentual')
+        

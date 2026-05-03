@@ -18,7 +18,9 @@ st.set_page_config(
 # ---------- #
 
 ANOS = ('2023 - 2025', '2023', '2024', '2025')
-CUSTOM_PALETTE = ['#83C9FF','#FFABAB','#0068C9']
+CUSTOM_PALETTE = {'EQUIPE': '#83C9FF', 
+         'SERVIÇOS / EQUIPAMENTOS': '#FFABAB', 
+         'MATERIAIS': '#0068C9'}
 FACECOLOR = '#1D293D'
 MESES = {
     '01': 'Jan', '02': 'Fev', '03': 'Mar', '04': 'Abr',
