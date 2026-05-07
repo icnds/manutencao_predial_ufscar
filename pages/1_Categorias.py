@@ -92,13 +92,13 @@ def plot_geral(df, df_formatado, x_col, y_col, custom_palette,
 
     # Adiciona valores acima das barras
     for p in ax.patches:
-        altura = int(p.get_height())
+        altura = float(p.get_height())
         if max_lim == 100:
-            proporcao = f'{altura:.0f}%'
+            proporcao = f'{altura:.1f}%'
             ax.annotate(proporcao, (p.get_x() + p.get_width() / 2., altura + 1.5), 
                         ha='center', va='bottom', color='white', fontsize=10)
         else:
-            quantidade = f'R$ {altura:,.0f}'.replace(',', '_').replace('.', ',').replace('_', '.')
+            quantidade = f'R$ {altura:,.2f}'.replace(',', '_').replace('.', ',').replace('_', '.')
             ax.annotate(quantidade, (p.get_x() + p.get_width() / 2., altura), 
                         ha='center', va='bottom', color='white', fontsize=10)
 
@@ -201,7 +201,7 @@ if periodo == '2023 - 2025':
 
         # Formata valores
         categorias_geral_formatado = categorias_geral.copy()
-        categorias_geral_formatado['TOTAL'] = categorias_geral_formatado['TOTAL'].apply(lambda x: f'{x:,.2f} %'.replace('.', ','))
+        categorias_geral_formatado['TOTAL'] = categorias_geral_formatado['TOTAL'].apply(lambda x: f'{x:,.1f} %'.replace('.', ','))
 
         # Gráfico de barras
         plot_geral(df=categorias_geral, 

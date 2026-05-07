@@ -40,14 +40,7 @@ def obter_tabela(query):
     tabela['PERCENTUAL'] = tabela.groupby('CATEGORIA')['TOTAL'].transform(lambda x: (x / x.sum()) * 100).round(2)
 
     # Define quais tabelas serão unidas em uma mesma categoria: OUTRAS
-    mapeamento = {chave: 'OUTRAS' for chave in OUTRAS_TABELAS}
-    mapeamento.update({
-        'SINAPI': 'SINAPI',
-        'CPOS': 'CPOS',
-        'ORSE': 'ORSE',
-        'FDE': 'FDE'
-        })
-            
+    mapeamento = {chave: 'OUTRAS' for chave in OUTRAS_TABELAS}            
     tabela['TABELA'] = tabela['BANCO'].replace(mapeamento)
 
     # Une tabelas com valores muito baixos em uma mesma categoria: OUTRAS
@@ -71,16 +64,15 @@ def tratar_tabela(tabelas_df, col, tipo):
 
 
 def exibir_tabela(df, tipo):
-
     if tipo == 'total':
         df = (df.pivot(index='CATEGORIA', columns='TABELA', values='TOTAL')
               .assign(TOTAL=lambda x: x.sum(axis=1))
-              .fillna('0,00')
+              .fillna('-')
               .map(lambda x: f'{x:,.2f}'.replace(',', '_').replace('.', ',').replace('_', '.') if isinstance(x, (int, float)) else x))
     else:
         df = (df.pivot(index='CATEGORIA', columns='TABELA', values='PERCENTUAL')
               .assign(TOTAL=lambda x: x.sum(axis=1))
-              .fillna('0 %'))
+              .fillna('-'))
         colunas_para_formatar = [col for col in df.columns if col != 'TOTAL']
         df[colunas_para_formatar] = df[colunas_para_formatar].map(
             lambda x: f'{x:,.1f} %'.replace(',', '_').replace('.', ',').replace('_', '.') 
@@ -108,12 +100,16 @@ def formato_contagem(x, pos):
 
 def exibir_grafico(df, col, max_lim, tipo):
 
+    # Somente duas tabelas: SINAPI ou NÃO SINAPI
+    tabela = df.copy()
+    tabela['TABELA'] = tabela['TABELA'].where(tabela['TABELA'] == 'SINAPI', 'NÃO SINAPI')
+
     # Configura tamanho da figura e cor de fundo
     plt.figure(figsize=(7, 4), facecolor=FACECOLOR)
-            
-    # Gráfico de barras
-    sns.barplot(df.sort_values(by=[col], ascending=False), x='TABELA', y=col, hue='CATEGORIA', 
-                 estimator='sum', errorbar=None, palette=CUSTOM_PALETTE)
+      
+    # Gráfico de barras empilhadas    
+    sns.barplot(tabela, x='TABELA', y=col, hue='CATEGORIA', 
+                estimator='sum', errorbar=None, palette=CUSTOM_PALETTE)
         
     # Altera cor de fundo dos eixos
     plt.gca().set_facecolor(FACECOLOR)
@@ -124,16 +120,32 @@ def exibir_grafico(df, col, max_lim, tipo):
 
     plt.xticks(color='white')
     plt.yticks(color='white')
-
+    
     plt.ylim(0, max_lim)
 
     # Altera cor dos eixos
     ax = plt.gca()
+
     for spine in ax.spines.values():
         spine.set_visible(False)
 
     for tick in ax.get_yticklabels():
         tick.set_color('white')
+
+    # Adiciona valores acima das barras
+    for p in ax.patches:
+        altura = float(p.get_height())
+        y_position = max(altura + 1.3, 3)
+        if altura == 0:
+            pass
+        elif altura < 110:
+            proporcao = f'{altura:,.1f}%'
+            ax.annotate(proporcao, (p.get_x() + p.get_width() / 2., y_position), 
+                        ha='center', va='bottom', color='white', fontsize=10)
+        else:
+            quantidade = f'R$ {altura:,.2f}'.replace(',', '_').replace('.', ',').replace('_', '.')
+            ax.annotate(quantidade, (p.get_x() + p.get_width() / 18, y_position), 
+                        ha='left', va='bottom', color='white', fontsize=10)
 
     # Adiciona grade
     ax.yaxis.grid(color='white', linestyle='--', linewidth=0.35, alpha=0.8)
@@ -207,7 +219,7 @@ if periodo == '2023 - 2025':
     st.caption('''
                             
                 ''', text_alignment='left')
-        
+    
     # Obtém tabela ordenada e formatada
     tabela_percentual = tratar_tabela(tabelas_df=tabela_quantidade, col='PERCENTUAL', tipo='quantidade')
 
@@ -215,8 +227,8 @@ if periodo == '2023 - 2025':
     exibir_tabela(df=tabela_percentual, tipo='percentual')
 
     # Exibe o gráfico de barras
-    exibir_grafico(df=tabela_quantidade, col='PERCENTUAL', 
-                    max_lim=tabela_quantidade['PERCENTUAL'].max(), 
+    exibir_grafico(df=tabela_percentual, col='PERCENTUAL', 
+                    max_lim=110, 
                     tipo='quantidade_percentual')
 
     
@@ -245,10 +257,9 @@ if periodo == '2023 - 2025':
         exibir_tabela(df=tabela_percentual, tipo='percentual')
 
         # Exibe o gráfico de barras
-        exibir_grafico(df=tabela_valor, col='PERCENTUAL', 
-                       max_lim=tabela_valor['PERCENTUAL'].max(), 
+        exibir_grafico(df=tabela_percentual, col='PERCENTUAL', 
+                       max_lim=110, 
                        tipo='valor_percentual')
-    
     else:
 
         # DataFrame completo
@@ -263,10 +274,9 @@ if periodo == '2023 - 2025':
         exibir_tabela(df=tabela_total, tipo='total')
 
         # Exibe gráfico de barras
-        exibir_grafico(df=tabela_valor, col='TOTAL', 
-                       max_lim=tabela_valor['TOTAL'].max() * 1.1, 
+        exibir_grafico(df=tabela_total, col='TOTAL', 
+                       max_lim=tabela_total['TOTAL'].max() * 1.1, 
                        tipo='valor_total')
-
 else:
 
     st.markdown('## Recorrência por categoria e tabela de consulta')
@@ -294,8 +304,8 @@ else:
     exibir_tabela(df=tabela_percentual, tipo='percentual')
 
     # Exibe o gráfico de barras
-    exibir_grafico(df=tabela_quantidade, col='PERCENTUAL', 
-                    max_lim=tabela_quantidade['PERCENTUAL'].max(), 
+    exibir_grafico(df=tabela_percentual, col='PERCENTUAL', 
+                    max_lim=110, 
                     tipo='quantidade_percentual')
 
 
@@ -325,10 +335,9 @@ else:
         exibir_tabela(df=tabela_percentual, tipo='percentual')
 
         # Exibe o gráfico de barras
-        exibir_grafico(df=tabela_valor, col='PERCENTUAL', 
-                       max_lim=tabela_valor['PERCENTUAL'].max(), 
+        exibir_grafico(df=tabela_percentual, col='PERCENTUAL', 
+                       max_lim=110, 
                        tipo='valor_percentual')
-    
     else:
 
         # DataFrame completo
@@ -343,8 +352,8 @@ else:
         exibir_tabela(df=tabela_total, tipo='total')
 
         # Exibe gráfico de barras
-        exibir_grafico(df=tabela_valor, col='TOTAL', 
-                       max_lim=tabela_valor['TOTAL'].max() * 1.1, 
+        exibir_grafico(df=tabela_total, col='TOTAL', 
+                       max_lim=tabela_total['TOTAL'].max() * 1.1, 
                        tipo='valor_total')
 
 
