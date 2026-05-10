@@ -17,4 +17,4 @@ st.markdown(
 
 st.page_link('pages/1_Categorias.py', label='Categorias', icon='1️⃣')
 st.page_link('pages/2_Tabelas.py', label='Tabelas', icon='2️⃣')
-st.page_link('pages/3_Rankings.py', label='Tabelas', icon='3️⃣')
+st.page_link('pages/3_Rankings.py', label='Rankings', icon='3️⃣')
