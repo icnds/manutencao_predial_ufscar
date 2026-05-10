@@ -33,7 +33,7 @@ def get_data(query, conn):
 
 
 def obter_tabela(query):
-    # Faz consulta SQL
+    # Consulta SQL
     tabela = get_data(query, conn=CONN)
 
     # Calcula percentuais em relação aos totais por categoria (não por tabela)
@@ -355,7 +355,6 @@ else:
         exibir_grafico(df=tabela_total, col='TOTAL', 
                        max_lim=tabela_total['TOTAL'].max() * 1.1, 
                        tipo='valor_total')
-
 
 # Fecha conexão e encerra sessão
 CONN.close()
