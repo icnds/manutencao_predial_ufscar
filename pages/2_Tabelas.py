@@ -68,7 +68,7 @@ def exibir_tabela(df, tipo):
         df = (df.pivot(index='CATEGORIA', columns='TABELA', values='TOTAL')
               .assign(TOTAL=lambda x: x.sum(axis=1))
               .fillna('-')
-              .map(lambda x: f'{x:,.2f}'.replace(',', '_').replace('.', ',').replace('_', '.') if isinstance(x, (int, float)) else x))
+              .map(lambda x: f'R${x:,.2f}'.replace(',', '_').replace('.', ',').replace('_', '.') if isinstance(x, (int, float)) else x))
     else:
         df = (df.pivot(index='CATEGORIA', columns='TABELA', values='PERCENTUAL')
               .assign(TOTAL=lambda x: x.sum(axis=1))
