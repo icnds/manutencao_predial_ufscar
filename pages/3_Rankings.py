@@ -10,7 +10,7 @@ import seaborn as sns
 
 st.set_page_config(
     page_title='Tabelas',
-    page_icon=':bar_chart:'
+    page_icon='3️⃣'
 )
 
 # ---------- #

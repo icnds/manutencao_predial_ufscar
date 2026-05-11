@@ -11,7 +11,7 @@ from matplotlib.ticker import FuncFormatter
 
 st.set_page_config(
     page_title='Tabelas',
-    page_icon=':bar_chart:'
+    page_icon='2️⃣'
 )
 
 # ---------- #

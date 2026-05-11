@@ -10,7 +10,7 @@ import seaborn as sns
 
 st.set_page_config(
     page_title='Categorias',
-    page_icon=':chart_with_upwards_trend:'
+    page_icon='1️⃣'
 )
 
 # ---------- #
