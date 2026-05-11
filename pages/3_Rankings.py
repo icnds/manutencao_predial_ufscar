@@ -128,7 +128,7 @@ periodo = st.selectbox(
 
 if periodo == '2023 - 2025':
 
-    on = st.toggle('R$', key='valor')
+    on = st.toggle('R$', key='valor_rankings')
     if on:
         st.markdown('## Top 10 por Valor')
         st.markdown('#### Para onde o dinheiro está indo')
@@ -185,7 +185,7 @@ if periodo == '2023 - 2025':
 else:
     option_safe = str(periodo).strip()
 
-    on = st.toggle('R$', key='valor')
+    on = st.toggle('R$', key='valor_ano_rankings')
     if on:
         st.markdown('## Top 10 por Valor')
         st.markdown('#### Para onde o dinheiro está indo')

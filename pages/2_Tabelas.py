@@ -255,7 +255,7 @@ if periodo == '2023 - 2025':
                                 ORDER BY TOTAL DESC;
                                 """)       
 
-    on = st.toggle('R$', key='valor')
+    on = st.toggle('R$', key='valor_tabelas')
     if not on:
 
         # DataFrame completo
@@ -333,7 +333,7 @@ else:
                                 ORDER BY TOTAL DESC;
                                 """)       
 
-    on = st.toggle('R$', key='valor')
+    on = st.toggle('R$', key='valor_ano_tabelas')
     if not on:
         
         # DataFrame completo

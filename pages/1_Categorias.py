@@ -171,7 +171,7 @@ if periodo == '2023 - 2025':
 
     st.markdown('## Despesas por categoria de manutenção predial')
 
-    on = st.toggle('%')
+    on = st.toggle('%', key='quantidade_categorias')
     if not on:
         # Consulta SQL para obtenção do DataFrame
         categorias_geral = get_data(query="""
@@ -251,7 +251,7 @@ else:
     st.markdown('## Despesas por categoria de manutenção predial')
 
     option_safe = str(periodo).strip()
-    on = st.toggle('%')
+    on = st.toggle('%', key='quantidade_ano_categorias')
     if not on:
         # Consulta SQL para obtenção do DataFrame
         categorias_geral = get_data(query=f"""
