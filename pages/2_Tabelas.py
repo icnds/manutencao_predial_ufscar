@@ -18,23 +18,33 @@ st.set_page_config(
 # CONSTANTES #
 # ---------- #
 
+# Cria conexão com banco de dados
+CONN = sqlite3.connect('dados_tratados/dados_tratados.db')
+
+# Tabelas a serem unidas
 OUTRAS_TABELAS = ('SBC', 'PRÓPRIA', 'SIURB', 'NÃO PREENCHIDA', 'SETOP')
+
+# Customiza paleta de cores
 CUSTOM_PALETTE = {'EQUIPE': '#83C9FF', 
          'SERVIÇOS / EQUIPAMENTOS': '#FFABAB', 
          'MATERIAIS': '#0068C9'}
+
+# Padronização da cor de fundo 
 FACECOLOR = '#1D293D'
 
 # ------- #
 # FUNÇÕES #
 # ------- #
 
-def get_data(query, conn):
-    return pd.read_sql_query(query, conn)
+@st.cache_data(ttl=3600)
+def get_data(query):
+    return pd.read_sql_query(query, CONN)
 
 
+@st.cache_data
 def obter_tabela(query):
     # Consulta SQL
-    tabela = get_data(query, conn=CONN)
+    tabela = get_data(query)
 
     # Calcula percentuais em relação aos totais por categoria (não por tabela)
     tabela['PERCENTUAL'] = tabela.groupby('CATEGORIA')['TOTAL'].transform(lambda x: (x / x.sum()) * 100).round(2)
@@ -48,6 +58,7 @@ def obter_tabela(query):
     return tabela_compacta
 
 
+@st.cache_data
 def tratar_tabela(tabelas_df, col, tipo):
     '''
     Ordena DataFrame pela coluna definida e 
@@ -63,6 +74,7 @@ def tratar_tabela(tabelas_df, col, tipo):
         return df.reset_index(drop=True)
 
 
+@st.cache_data
 def exibir_tabela(df, tipo):
     if tipo == 'total':
         df = (df.pivot(index='CATEGORIA', columns='TABELA', values='TOTAL')
@@ -86,18 +98,22 @@ def exibir_tabela(df, tipo):
     st.table(df, border='horizontal')
 
 
+@st.cache_data
 def formato_moeda(x, pos):
     return f'R$ {x:,.0f}'.replace(',', '_').replace('.', ',').replace('_', '.')
 
 
+@st.cache_data
 def formato_percentual(x, pos):
     return f'{x:,.0f}%'
 
 
+@st.cache_data
 def formato_contagem(x, pos):
     return f'{x:,.0f}'.replace(',', '_').replace('.', ',').replace('_', '.')
 
 
+@st.cache_data
 def exibir_grafico(df, col, max_lim, tipo):
 
     # Somente duas tabelas: SINAPI ou NÃO SINAPI
@@ -170,14 +186,11 @@ def exibir_grafico(df, col, max_lim, tipo):
     # Exibe gráfico no Streamlit
     st.pyplot(plt)
 
-# ------------------------------------- #
-# TÍTULO, APRESENTACAO E CONEXÃO SQLite #
-# ------------------------------------- #
+# ------ #
+# TÍTULO #
+# ------ #
 
 st.title('Tabelas')
-
-# Cria conexão com banco de dados
-CONN = sqlite3.connect('dados_tratados/dados_tratados.db')
 
 # ------------------ #
 # SELETOR DE PERÍODO #
@@ -187,7 +200,7 @@ tabela_anos = get_data(query="""
                        SELECT strftime('%Y', DATA) AS ANO 
                        FROM sao_carlos 
                        ORDER BY ANO ASC;
-                       """, conn=CONN)
+                       """)
 
 lista_anos = tabela_anos['ANO'].unique().tolist()
 ANOS = [f'{lista_anos[0]} - {lista_anos[-1]}'] + list(lista_anos)

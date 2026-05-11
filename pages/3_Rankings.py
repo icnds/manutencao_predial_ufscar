@@ -17,17 +17,25 @@ st.set_page_config(
 # CONSTANTES #
 # ---------- #
 
+# Cria conexão com banco de dados
+CONN = sqlite3.connect('dados_tratados/dados_tratados.db')
+
+# Padronização da cor das barras do gráfico
 BAR_COLOR = '#73953D'
+
+# Padronização da cor de fundo
 FACECOLOR = '#1D293D'
 
 # ------- #
 # FUNÇÕES #
 # ------- #
 
-def get_data(query, conn):
-    return pd.read_sql_query(query, conn)
+@st.cache_data(ttl=3600)
+def get_data(query):
+    return pd.read_sql_query(query, CONN)
 
 
+@st.cache_data
 def exibir_tabela(df, tipo):
     tabela = df.copy()
     tabela.loc[tabela['CLASSIFICAÇÃO SINAPI'] == 'LIVRO SINAPI: CÁLCULOS E PARÂMETROS', 'CLASSIFICAÇÃO SINAPI'] = 'EQUIPE ROTINEIRA (PROFISSIONAIS / HORA)'
@@ -37,6 +45,8 @@ def exibir_tabela(df, tipo):
         tabela['TOTAL'] = tabela['TOTAL'].apply(lambda x: f'{x:,.2f}'.replace(',', '_').replace('.', ',').replace('_', '.'))
     return tabela
 
+
+@st.cache_data
 def exibir_grafico_barras(df, tipo):
 
     tabela = df.copy()
@@ -100,7 +110,7 @@ tabela_anos = get_data(query="""
                        SELECT strftime('%Y', DATA) AS ANO 
                        FROM sao_carlos 
                        ORDER BY ANO ASC;
-                       """, conn=CONN)
+                       """)
 
 lista_anos = tabela_anos['ANO'].unique().tolist()
 ANOS = [f'{lista_anos[0]} - {lista_anos[-1]}'] + list(lista_anos)
@@ -132,7 +142,7 @@ if periodo == '2023 - 2025':
                     HAVING TOTAL > 0
                     ORDER BY TOTAL DESC
                     LIMIT 10;
-                    """, conn=CONN)
+                    """)
         
         # # Formata DataFrame
         # tabela = exibir_tabela(df, tipo='valor')
@@ -159,7 +169,7 @@ if periodo == '2023 - 2025':
                     HAVING TOTAL > 0
                     ORDER BY TOTAL DESC
                     LIMIT 10;
-                    """, conn=CONN)
+                    """)
         
         # # Formata DataFrame
         # tabela = exibir_tabela(df, tipo='quantidade')
@@ -195,7 +205,7 @@ else:
                     HAVING TOTAL > 0
                     ORDER BY TOTAL DESC
                     LIMIT 10;
-                    """, conn=CONN)
+                    """)
         
         # # Formata DataFrame
         # tabela = exibir_tabela(df, tipo='valor')
@@ -227,7 +237,7 @@ else:
                     HAVING TOTAL > 0
                     ORDER BY TOTAL DESC
                     LIMIT 10;
-                    """, conn=CONN)
+                    """)
         
         # # Formata DataFrame
         # tabela = exibir_tabela(df, tipo='quantidade')

@@ -17,10 +17,18 @@ st.set_page_config(
 # CONSTANTES #
 # ---------- #
 
+# Cria conexão com banco de dados
+CONN = sqlite3.connect('dados_tratados/dados_tratados.db')
+
+# Customiza paleta de cores
 CUSTOM_PALETTE = {'EQUIPE': '#83C9FF', 
          'SERVIÇOS / EQUIPAMENTOS': '#FFABAB', 
          'MATERIAIS': '#0068C9'}
+
+# Padronização da cor de fundo 
 FACECOLOR = '#1D293D'
+
+# Codificação dos meses
 MESES = {
     '01': 'Jan', '02': 'Fev', '03': 'Mar', '04': 'Abr',
     '05': 'Mai', '06': 'Jun', '07': 'Jul', '08': 'Ago',
@@ -31,10 +39,12 @@ MESES = {
 # FUNÇÕES #
 # ------- #
 
-def get_data(query, conn):
-    return pd.read_sql_query(query, conn)
+@st.cache_data(ttl=3600)
+def get_data(query):
+    return pd.read_sql_query(query, CONN)
 
 
+@st.cache_data
 def plot_geral(df, df_formatado, x_col, y_col, custom_palette, 
                ylabel_text, max_lim):
     st.caption('''
@@ -112,6 +122,7 @@ def plot_geral(df, df_formatado, x_col, y_col, custom_palette,
     st.pyplot(plt)
 
 
+@st.cache_data
 def plot_temporal(df, idx, col, value):
     df_pivot = df.pivot(index=idx, columns=col, values=value).fillna(0)
     st.caption('''
@@ -119,9 +130,9 @@ def plot_temporal(df, idx, col, value):
                ''', text_alignment='center')
     st.line_chart(data=df_pivot, x_label='PERÍODO', y_label='R$')
 
-# ------------------------------------- #
-# TÍTULO, APRESENTACAO E CONEXÃO SQLite #
-# ------------------------------------- #
+# --------------------- #
+# TÍTULO & APRESENTACAO #
+# --------------------- #
 
 st.title('Categorias')
 
@@ -132,9 +143,6 @@ st.write(
     e Serviços/Equipamentos adicionais necessários."""
 )
 
-# Cria conexão com banco de dados
-CONN = sqlite3.connect('dados_tratados/dados_tratados.db')
-
 # ------------------ #
 # SELETOR DE PERÍODO #
 # ------------------ #
@@ -143,7 +151,7 @@ tabela_anos = get_data(query="""
                        SELECT strftime('%Y', DATA) AS ANO 
                        FROM sao_carlos 
                        ORDER BY ANO ASC;
-                       """, conn=CONN)
+                       """)
 
 lista_anos = tabela_anos['ANO'].unique().tolist()
 ANOS = [f'{lista_anos[0]} - {lista_anos[-1]}'] + list(lista_anos)
@@ -171,7 +179,7 @@ if periodo == '2023 - 2025':
                                     FROM sao_carlos 
                                     GROUP BY CATEGORIA
                                     ORDER BY TOTAL DESC;
-                                    """, conn=CONN)
+                                    """)
         
         # Formata valores
         categorias_geral_formatado = categorias_geral.copy()
@@ -195,7 +203,7 @@ if periodo == '2023 - 2025':
                                     FROM sao_carlos 
                                     GROUP BY CATEGORIA
                                     ORDER BY TOTAL DESC;
-                                    """, conn=CONN)
+                                    """)
         # Converte para porcentagem
         categorias_geral['TOTAL'] = categorias_geral['TOTAL'] * 100
 
@@ -221,7 +229,7 @@ if periodo == '2023 - 2025':
                                    FROM sao_carlos 
                                    GROUP BY MÊS, CATEGORIA
                                    ORDER BY MÊS, TOTAL DESC;
-                                   """, conn=CONN)
+                                   """)
     
     # Formata data
     categoria_ano_formatado = categorias_temporal.copy()
@@ -252,7 +260,7 @@ else:
                                     WHERE strftime('%Y', DATA) = '{option_safe}'
                                     GROUP BY CATEGORIA
                                     ORDER BY TOTAL DESC;
-                                    """, conn=CONN)
+                                    """)
         
         # Formata valores
         categorias_geral_formatado = categorias_geral.copy()
@@ -279,7 +287,7 @@ else:
                                     WHERE strftime('%Y', DATA) = '{option_safe}'
                                     GROUP BY CATEGORIA
                                     ORDER BY TOTAL DESC;
-                                    """, conn=CONN)
+                                    """)
         # Converte para porcentagem
         categorias_geral['TOTAL'] = categorias_geral['TOTAL'] * 100
 
@@ -306,7 +314,7 @@ else:
                               WHERE strftime('%Y', DATA) = '{option_safe}'
                               GROUP BY MÊS, CATEGORIA
                               ORDER BY MÊS, TOTAL DESC;
-                              """, conn=CONN)
+                              """)
     # Formata data
     categoria_ano_formatado = categoria_ano.copy()
     categoria_ano_formatado['MÊS_NOME'] = categoria_ano_formatado['MÊS'].str.split('-').str[1].map(MESES) + ' - ' + categoria_ano_formatado['MÊS'].str.split('-').str[0]
