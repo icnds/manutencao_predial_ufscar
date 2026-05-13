@@ -82,7 +82,7 @@ def exibir_grafico_barras(df, tipo):
         width = float(p.get_width())
         if tipo == 'valor':
             quantidade = f'R$ {width:,.2f}'.replace(',', '_').replace('.', ',').replace('_', '.')
-        else:
+        elif tipo == 'quantidade':
             quantidade = f'{width:,.2f}'.replace(',', '_').replace('.', ',').replace('_', '.')
         ax.annotate(quantidade, (width, p.get_y() + p.get_height() / 2), 
                     ha='left', va='center', color='white', fontsize=10)
@@ -155,7 +155,6 @@ if periodo == '2023 - 2025':
         # st.table(tabela, border='horizontal')
 
         exibir_grafico_barras(df, tipo='valor')
-
     else: 
         st.markdown('## Top 10 por Quantidade')
         st.markdown('#### O que dá mais trabalho operacional')
