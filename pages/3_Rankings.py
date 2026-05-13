@@ -84,6 +84,8 @@ def exibir_grafico_barras(df, tipo):
             quantidade = f'R$ {width:,.2f}'.replace(',', '_').replace('.', ',').replace('_', '.')
         elif tipo == 'quantidade':
             quantidade = f'{width:,.2f}'.replace(',', '_').replace('.', ',').replace('_', '.')
+        else:
+            pass
         ax.annotate(quantidade, (width, p.get_y() + p.get_height() / 2), 
                     ha='left', va='center', color='white', fontsize=10)
 
